@@ -13,7 +13,7 @@ class ProviderRule:
 	lowercaseLocal: bool | None = None
 	removeDots: bool | None = None
 	subaddressSeparators: list[str] | None = None
-	canonicalDomain: list[str] | None = None
+	canonicalDomain: str | None = None
 
 type DefaultRule = LocalPartRules
 
