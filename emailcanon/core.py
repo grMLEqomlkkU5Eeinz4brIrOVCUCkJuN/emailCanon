@@ -1,6 +1,6 @@
 import re
 from providers import DEFAULT_PROVIDERS
-from _types import DefaultRule, NormalizeOptions, NormalizedEmail, ProviderRule, LocalPartRules
+from _types import DefaultRule, NormalizeOptions, EmailParts, NormalizedEmail, ProviderRule, LocalPartRules
 
 CONSERVATIVE_DEFAULT: DefaultRule = LocalPartRules(
 	lowercaseLocal = False,
@@ -25,7 +25,7 @@ def buildRegistry(providers: list[ProviderRule]) -> dict[str, ProviderRule]:
 
 def getRegistry(options: NormalizeOptions) -> dict[str, ProviderRule]:
 	global defaultRegistry
-	
+
 	if not options.providers and not options.replaceDefaultProviders:
 		if defaultRegistry is None:
 			defaultRegistry = buildRegistry(DEFAULT_PROVIDERS)
@@ -35,3 +35,17 @@ def getRegistry(options: NormalizeOptions) -> dict[str, ProviderRule]:
 
 	providers_list = options.providers if options.providers is not None else []
 	return buildRegistry([*base, *providers_list])
+
+def splitEmail(email: str) -> EmailParts | None:
+	at = email.rfind("@")
+	if at <= 0 or at == len(email) - 1:
+		return None
+
+	return EmailParts(
+		local = email[0:at],
+		domain = email[at + 1]
+	)
+
+
+def isQuoted(local: str) -> bool:
+	return len(local) >=2 and local.startswith('"') and local.startswith("'")

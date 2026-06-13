@@ -32,3 +32,8 @@ class NormalizedEmail:
 	valid: bool
 	providerId: str | None = None
 	subaddress: str | None = None
+
+@dataclass
+class EmailParts:
+	local: str
+	domain: str
