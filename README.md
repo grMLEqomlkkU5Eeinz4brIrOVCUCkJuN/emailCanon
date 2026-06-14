@@ -53,7 +53,10 @@ Applies provider-specific rules including:
 - `email`: The email address to normalize
 - `options`: Optional normalization options (see `NormalizeOptions` below)
 
-**Returns:** Canonical email string
+**Returns:** Canonical email string. The string is returned regardless of
+whether the address is structurally valid; this function discards the `valid`
+flag. If you need the validity flag or the parsed components, use
+[`normalizeEmailDetailed`](#normalizeemaildetailedemail-str-options-normalizeoptions--none--none---normalizedemail).
 
 **Raises:** `TypeError` if email is not a string
 
@@ -75,7 +78,9 @@ Normalizes an email and returns detailed information about the normalization.
 - `domain`: Normalized domain
 - `providerId`: ID of matched provider (e.g., "gmail"), or `None`
 - `subaddress`: Extracted sub-address (e.g., "tag" from "user+tag"), or `None`
-- `valid`: Whether the email is structurally valid
+  (an empty tag such as `user+` yields `None`, just like having no separator)
+- `valid`: Whether the email is structurally valid (see
+  [Validity flag limitations](#validity-flag-limitations))
 
 **Example:**
 ```python
@@ -153,6 +158,13 @@ options = NormalizeOptions(
 
 normalized = normalizeEmail("user@custom.example.com", options)
 ```
+
+**Caching note:** The provider registry built from a `NormalizeOptions`
+instance is memoized per options object (keyed on identity), so reusing the
+same `options` across many calls — the typical bulk-deduplication pattern —
+avoids rebuilding the registry every time. Because the cache is keyed on object
+identity, mutating an `options` object after its first use will not be
+reflected; construct a fresh `NormalizeOptions` instead of mutating one.
 
 ### `ProviderRule`
 
@@ -270,6 +282,23 @@ normalizeEmail("User@custom.local", options)
 - **Domain validation**: Domains must follow standard DNS naming (labels separated by dots, alphanumeric + hyphens)
 - **Immutable rules**: Provider rules are frozen dataclasses; mutation is not possible
 
+### Validity flag limitations
+
+The `valid` flag returned by `normalizeEmailDetailed` is a pragmatic structural
+check, not a full RFC 5321/5322 validator. In particular, the domain check has
+two known limitations:
+
+- **Single-label hosts are rejected.** The domain must contain at least one dot,
+  so hosts like `localhost` are reported as `valid=False`, even though they are
+  deliverable in some environments.
+- **Non-ASCII / IDN domains are rejected.** The check is ASCII-only, so
+  internationalized domains such as `münchen.de` are reported as
+  `valid=False`. Pre-encode them to Punycode (`xn--mnchen-3ya.de`) if you need
+  them to pass.
+
+These limitations only affect the `valid` flag; normalization of the local part
+and domain is still performed in all cases.
+
 ## Why Email Canonicalization?
 
 Email addresses can look different but deliver to the same mailbox:
@@ -281,6 +310,37 @@ Email addresses can look different but deliver to the same mailbox:
 | `johndoe@googlemail.com` | `johndoe@gmail.com` (domain alias) |
 
 Without canonicalization, a user could register multiple accounts. emailCanon standardizes these to detect and prevent duplicate registrations.
+
+## Development
+
+Set up a local virtual environment and install the package with its dev
+dependencies (mypy, ruff):
+
+```bash
+# Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# Install the package in editable mode with dev extras
+pip install -e ".[dev]"
+```
+
+Then run the tooling:
+
+```bash
+# Run the test suite (the test files are named after the area they cover,
+# e.g. gmail.py, so discovery needs an explicit pattern)
+python -m unittest discover -s tests -p "*.py"
+
+# ...or run a single test module directly
+python -m unittest tests.gmail
+
+mypy            # type-check
+ruff format     # format with tabs
+ruff check      # lint
+```
+
+When you're done, leave the environment with `deactivate`.
 
 ## References
 
