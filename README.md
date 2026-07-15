@@ -161,10 +161,9 @@ normalized = normalizeEmail("user@custom.example.com", options)
 
 **Caching note:** The provider registry built from a `NormalizeOptions`
 instance is memoized per options object (keyed on identity), so reusing the
-same `options` across many calls — the typical bulk-deduplication pattern —
-avoids rebuilding the registry every time. Because the cache is keyed on object
-identity, mutating an `options` object after its first use will not be
-reflected; construct a fresh `NormalizeOptions` instead of mutating one.
+same `options` across many calls avoids rebuilding the registry every time.
+Because the cache is keyed on object identity, mutating an `options` object
+after its first use will not be reflected. This is where you construct a fresh `NormalizeOptions` instead of mutating one.
 
 ### `ProviderRule`
 
@@ -346,7 +345,7 @@ When you're done, leave the environment with `deactivate`.
 
 Provider rules compiled from:
 - Wikipedia, [Email address](https://en.wikipedia.org/wiki/Email_address) (sub-addressing section)
-- [aaronbassett's Email sub-addressing gist](https://gist.github.com/aaronbassett/2f8b3a26cf54e5e1fc9c)
+- [aaronbassett's Email sub-addressing gist](https://gist.github.com/aaronbassett/4135599)
 - [validator.js](https://github.com/validatorjs/validator.js) normalizeEmail conventions
 - Official provider documentation (Fastmail, Microsoft Learn, Proton)
 
